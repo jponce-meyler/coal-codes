@@ -4,7 +4,8 @@
   "description": "This is a framework/utilites group to make your work faster",
   "main": "index.js",
   "scripts": {
-    "test": "node ./test"
+    "test": "node ./test",
+    "example": "node ./example"
   },
   "repository": {
     "type": "git",

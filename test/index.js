@@ -1,3 +1,3 @@
 const coal = require('../')
-const App = coal()
-App.start()
+const app = coal()
+app.start()
