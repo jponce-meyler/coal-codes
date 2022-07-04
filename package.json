@@ -1,0 +1,34 @@
+{
+  "name": "coal-codes",
+  "version": "1.0.0",
+  "description": "This is a framework/utilites group to make your work faster",
+  "main": "index.js",
+  "scripts": {
+    "test": "node ./test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jponce-meyler/coal-codes.git"
+  },
+  "keywords": [
+    "coal-codes",
+    "express",
+    "app",
+    "framework"
+  ],
+  "author": "_meyler",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jponce-meyler/coal-codes/issues"
+  },
+  "homepage": "https://github.com/jponce-meyler/coal-codes#readme",
+  "dependencies": {
+    "app-root-path": "^3.0.0",
+    "espree": "^9.3.2",
+    "express": "^4.18.1",
+    "merge-deep": "^3.0.3"
+  },
+  "devDependencies": {
+    "eslint": "^8.19.0"
+  }
+}
