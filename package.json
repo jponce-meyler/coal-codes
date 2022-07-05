@@ -1,7 +1,7 @@
 {
   "name": "coal-codes",
-  "version": "1.0.0",
-  "description": "This is a framework/utilites group to make your work faster",
+  "version": "0.1.0",
+  "description": "[ALPHA] This is a framework/utilites group to make your work faster",
   "main": "index.js",
   "scripts": {
     "test": "node ./test",
@@ -24,12 +24,15 @@
   },
   "homepage": "https://github.com/jponce-meyler/coal-codes#readme",
   "dependencies": {
-    "app-root-path": "^3.0.0",
-    "espree": "^9.3.2",
     "express": "^4.18.1",
+    "express-session": "^1.17.3",
     "merge-deep": "^3.0.3"
   },
   "devDependencies": {
     "eslint": "^8.19.0"
+  },
+  "optionalDependencies": {
+    "app-root-path": "^3.0.0",
+    "espree": "^9.3.2"
   }
 }

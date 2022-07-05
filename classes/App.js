@@ -1,34 +1,29 @@
 const express = require('express');
+const session = require('express-session');
 const fs = require('fs');
 const path = require('path');
 const mergeDeep = require('merge-deep');
-const espree = require("espree");
-const commentsBuilder = require('./Utils/Espree/commentsBuilder');
 
 const Router = require('./Routing/Router');
-const Route = require('./Routing/Route');
+const crypto = require("crypto");
 
 class App {
     name
     core
     isProduction = false
     settings = require('../defaults')
-    databases = {}
     services = {
         mongo: false
     }
+    databases = {}
     defaultDatabase
-    extra = {}
-    routes = {}
+    router = new Router()
 
 
     constructor(name = 'Coal Codes App', options= {}) {
         this.name = name
         this.core = express()
         this.settings = mergeDeep(this.settings, options)
-        if (options.autodetect) {
-            this.autodetect(options.autodetect)
-        }
         if (this.settings.express.json !== false && !this.settings.express.json.limit) {
             this.settings.express.json.limit = this.settings.express.limit
         }
@@ -41,8 +36,8 @@ class App {
         this.isProduction = this.settings.env === 'production'
     }
 
-    async autodetect(options) {
-        if (typeof options == "boolean") {
+    autodetect(options) {
+        if (typeof options == "boolean" && options) {
             options = {
                 path: true,
                 controllers: true,
@@ -56,27 +51,18 @@ class App {
             this.findControllersPath(this.settings.path.root)
         }
         if (options.routes && this.settings.path.controllers) {
-            let routes = await this.findRoutes(this.settings.path.controllers)
-        }
-    }
-
-    pushRoute(route) {
-        if (!Array.isArray(route)) {
-            route = [route]
-        }
-        for (let r of route) {
-            if (!(r instanceof Route)) {
-                r = new Route(r)
-            }
-            if (!this.routes[r.method]) {
-                this.routes[r.method] = []
-            }
-            this.routes[r.method].push(r)
+            let routes = Router.findRoutesSync(this.settings.path.controllers)
+            this.router.pushRoutes(routes)
         }
     }
 
     findRootPath() {
-        this.settings.path.root = require('app-root-path')
+        try {
+            this.settings.path.root = require('app-root-path')
+        } catch (e) {
+            console.warn(e)
+            console.log("You have to install the optional dependency 'app-root-path' to use the autodetect path feature.")
+        }
     }
 
     findControllersPath(rootPath) {
@@ -97,27 +83,47 @@ class App {
         }
     }
 
-    async findRoutes(controllersPath) {
-        let routes = {}
-        const espree = require('espree');
-        let promises = []
-        let files = fs.readdirSync(controllersPath)
-        for (let file of files) {
-            if (file.endsWith('.js')) {
-                promises.push(new Promise((resolve, reject) => {
-                    fs.readFile( path.join(controllersPath, file), (err, data) => {
-                        data = espree.parse(data.toString(), { ecmaVersion: "latest", comment: true, range: true})
-                        data = commentsBuilder(data)
-                        resolve(Router.getRoutesFromJS(path.join(controllersPath, file), data))
-                    })
-                }))
-            }
-        }
-        return routes
+    setSecret(secret) {
+        this.settings.session.secret = secret
     }
 
     start() {
-        console.log(this.name)
+        if (this.settings.autodetect) {
+            this.autodetect(this.settings.autodetect)
+        }
+        this.router.applyRoutes(this.settings.appRouter)
+
+        // set up a default session key based on app name
+        // todo: make this more secure
+        if (!this.settings.session.secret) {
+            this.settings.session.secret = crypto.createHash('md5').update(this.name).digest("hex")
+        }
+
+        // set up different environment for production and for others
+        if (this.isProduction) {
+            this.core.set('trust proxy', 1) // trust first proxy
+            this.settings.session.cookie.secure = true // serve secure cookies
+        }
+
+        // starting the session
+        this.core.use(session(this.settings.session))
+
+        this.core.use(this.router.applyRoutes(new express.Router()))
+
+        // to support JSON-encoded and URL-encoded bodies
+        // this.core.use(express.limit(this.options.express.limit));
+        // this.core.use(express.bodyParser(this.options.express.bodyParser));
+        this.core.use(express.json(this.settings.express.json))
+        this.core.use(express.urlencoded(this.settings.express.urlencoded))
+
+        let currentApp = this
+        process.on('SIGINT', function () {
+            Object.entries(currentApp.databases).forEach(([name, connection]) => {
+                connection.close(() => {
+                    console.warn(`Database ${name} lost connection`)
+                })
+            })
+        });
     }
 }
 

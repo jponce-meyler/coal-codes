@@ -14,7 +14,7 @@ class Route {
     className = ''
     methodName = ''
 
-    constructor({method, path, roles = ['PUBLIC'], file, className, methodName}) {
+    constructor({method, path, roles = ['PUBLIC'], file, className, methodName} = {}) {
         if (METHODS[method]) {
             this.method = METHODS[method]
         }
